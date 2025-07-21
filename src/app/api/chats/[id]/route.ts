@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; 
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: { id: string } }
 ) {
-  const chatId = params.id;
+  const chatId = context.params.id;
 
   if (!chatId) {
     return NextResponse.json({ error: "Chat ID is required" }, { status: 400 });
