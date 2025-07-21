@@ -1,4 +1,4 @@
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authen';
 // /app/api/chats/route.ts or wherever your handler is
 
 import { getServerSession } from "next-auth";
