@@ -1,15 +1,12 @@
+// src/app/api/chats/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Define the shape of context.params explicitly
-interface Context {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(req: NextRequest, context: Context) {
-  const chatId = context.params.id;
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: chatId } = await params;
 
   if (!chatId) {
     return NextResponse.json({ error: "Chat ID is required" }, { status: 400 });

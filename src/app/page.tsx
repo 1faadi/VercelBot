@@ -1,15 +1,11 @@
-import ChatSidebar from "@/components/chat-sidebar";
-import Chatbot from "@/components/ui/chatbot";
-import React from "react";
-const HomePage = () => {
+// app/page.tsx  ➜  server entry (kept minimal)
+import { Suspense } from 'react'
+import Chatbot from '@/components/ui/chatbot' // move the big file to components
+
+export default function HomePage() {
   return (
-    <main className="w-full h-dvh bg-background">
-     
-      
-      <div className=" mx-auto h-full">
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading…</div>}>
       <Chatbot />
-      </div>
-    </main>
+    </Suspense>
   )
 }
-export default HomePage;

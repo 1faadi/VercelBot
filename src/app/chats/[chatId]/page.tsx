@@ -1,17 +1,17 @@
-// ❌ Do NOT use 'use client' here
-
+// src/app/chats/[chatId]/page.tsx
 import { getChatById } from "@/lib/db/queries";
 import { notFound } from "next/navigation";
 import { ChatMessageBubble } from "@/components/chat-message-bubble";
 import { ContinueChatForm } from "@/components/continue-chat-form";
 
 interface ChatPageProps {
-  params: { chatId: string };
+  params: Promise<{ chatId: string }>;   // ✅ wrap in Promise
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
-  const chat = await getChatById(params.chatId); // ✅ This is safe in server component
+  const { chatId } = await params;        // ✅ await the Promise
 
+  const chat = await getChatById(chatId);
   if (!chat) return notFound();
 
   return (
@@ -26,7 +26,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
         ))}
       </div>
 
-      <ContinueChatForm chatId={params.chatId} />
+      <ContinueChatForm chatId={chatId} />
     </div>
   );
 }
