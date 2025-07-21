@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
+// Define the shape of context.params explicitly
+interface Context {
+  params: {
+    id: string;
+  };
+}
+
+export async function GET(req: NextRequest, context: Context) {
   const chatId = context.params.id;
 
   if (!chatId) {
