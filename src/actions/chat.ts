@@ -1,10 +1,9 @@
 "use server";
 
-import { streamText } from "ai";
-import { createStreamableValue } from "ai/rsc";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { gemini } from "@/lib/gemini";
+import { together } from "@/lib/together"; // Together SDK initialized here
+import { createStreamableValue } from "ai/rsc";
 import { Message as ChatMessage } from "@/components/ui/chatbot";
 
 export const chat = async (
@@ -13,12 +12,10 @@ export const chat = async (
 ) => {
   const session = await auth();
   const userId = session?.user?.id;
-
   if (!userId) throw new Error("Not authenticated");
 
   let chatRecord;
   if (chatId) {
-    // Append user message to existing chat
     await prisma.message.create({
       data: {
         chatId,
@@ -31,11 +28,8 @@ export const chat = async (
       where: { id: chatId },
     });
 
-    if (!chatRecord) {
-      throw new Error("Chat not found");
-    }
+    if (!chatRecord) throw new Error("Chat not found");
   } else {
-    // Create new chat with full history
     chatRecord = await prisma.chat.create({
       data: {
         userId,
@@ -49,32 +43,43 @@ export const chat = async (
     });
   }
 
-  // Stream assistant reply
   const stream = createStreamableValue();
 
   (async () => {
-    const { textStream } = streamText({
-      model: gemini("gemini-1.5-flash"),
-      messages: history,
-    });
+    try {
+      const response = await together.chat.completions.create({
+        model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        messages: history.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        max_tokens: 1024,
+        temperature: 0.7,
+        stream: true,
+      });
+      
+      
 
-    let fullReply = "";
+      let fullReply = "";
 
-    for await (const chunk of textStream) {
-      stream.update(chunk);
-      fullReply += chunk;
+      for await (const token of response) {
+        const chunk = token.choices[0]?.delta?.content ?? "";
+        stream.update(chunk);
+        fullReply += chunk;
+      }
+
+      await prisma.message.create({
+        data: {
+          chatId: chatRecord.id,
+          role: "assistant",
+          content: fullReply,
+        },
+      });
+
+      stream.done();
+    } catch (err) {
+      stream.done(err);
     }
-
-    // Save assistant's reply to chat
-    await prisma.message.create({
-      data: {
-        chatId: chatRecord.id,
-        role: "assistant",
-        content: fullReply,
-      },
-    });
-
-    stream.done();
   })();
 
   return {
